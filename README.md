@@ -19,13 +19,16 @@
 * **🧠 智能布局分析**：
   * 使用 AI 视觉模型精确识别页面中的文本块、视觉元素和背景颜色。
   * 自动分离文本层与视觉层。
+  * <img width="1889" height="966" alt="9cf4a57d1d1d8ccb31234bf949e1e0f3" src="https://github.com/user-attachments/assets/61c14f4f-7cfd-4192-8f2e-d88f43db0cb6" />
 * **🎨 智能背景修复**：
   * **自动去字**：在提取文本后，AI 会自动“擦除”原图上的文字，并根据周围纹理修复背景，生成干净的底图。
   * **手动擦除**：提供“橡皮擦”模式，用户可手动框选区域让 AI 移除多余元素。
+  * <img width="1949" height="1029" alt="f3f6dc298871c20e30ba5727c606a089" src="https://github.com/user-attachments/assets/b562f500-de19-4aa9-8172-c20bca7e033a" />
 * **✏️ 矢量化转换 (Beta)**：尝试将识别到的简单几何图形（矩形、圆形、箭头等）转换为 PPT 原生形状，而非仅仅粘贴图片。
 * **🛠️ 人工校正工作流**：
   * 提供交互式画布，允许用户在 AI 分析后手动调整识别框、修改元素类型（文本/图片）。
   * 支持对特定视觉元素进行 AI 重绘或指令修改。
+  * <img width="1768" height="965" alt="18293848302664b396fa37cb85993d28" src="https://github.com/user-attachments/assets/508dd335-c3ed-4794-8216-ab4257faf724" />
 * **📥 一键导出 PPT**：将拆解后的所有元素（文本、背景、图片、形状）按原位置重组，导出为可编辑的 `.pptx` 文件。
 * **⚙️ 多模型支持**：内置设置面板，支持切换 Google Gemini 或 OpenAI (GPT-4o) 作为后端模型。
 
