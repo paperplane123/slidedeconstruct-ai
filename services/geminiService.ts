@@ -4,6 +4,12 @@ import { SlideAnalysisResult, ElementType, AISettings, DEFAULT_AI_SETTINGS, Prov
 // State to hold current settings
 let currentSettings: AISettings = { ...DEFAULT_AI_SETTINGS };
 
+// Allow initializing with env var if available and no user setting
+// Note: In Vite, environment variables need to be prefixed with VITE_ to be accessible in browser
+if (import.meta.env.VITE_API_KEY && !currentSettings.gemini.apiKey) {
+    currentSettings.gemini.apiKey = import.meta.env.VITE_API_KEY;
+}
+
 export const updateSettings = (settings: AISettings) => {
   currentSettings = settings;
 };
@@ -426,7 +432,14 @@ export const removeTextFromImage = async (base64Image: string, detectedElements:
               { inlineData: { mimeType: 'image/png', data: cleanBase64 } },
               { text: prompt }
             ]
-          }
+          },
+          // Add safety settings to prevent false positives blocking image generation
+          safetySettings: [
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          ]
         }));
         if (response.candidates?.[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
@@ -492,7 +505,13 @@ export const eraseAreasFromImage = async (base64Image: string, boxes: BoundingBo
               { inlineData: { mimeType: 'image/png', data: cleanBase64 } },
               { text: prompt }
             ]
-          }
+          },
+          safetySettings: [
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          ]
         }));
         if (response.candidates?.[0]?.content?.parts) {
             for (const part of response.candidates[0].content.parts) {
@@ -530,7 +549,13 @@ export const regenerateVisualElement = async (croppedBase64: string, instruction
                { inlineData: { mimeType: 'image/png', data: cleanBase64 } },
                { text: `Edit this image: ${instruction}. Maintain exact aspect ratio and style. Output image only.` }
              ]
-           }
+           },
+           safetySettings: [
+              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+          ]
          }));
          if (response.candidates?.[0]?.content?.parts) {
            for (const part of response.candidates[0].content.parts) {
@@ -724,19 +749,28 @@ export const processConfirmedLayout = async (base64Image: string, confirmedEleme
     try {
         const cleanedImageBase64 = await removeTextFromImage(cleanBase64, detectedTextElements);
         
+        // Critical Fix: If cleanedImageBase64 is null (failed), fallback to original base64Image
+        // This prevents the "background gone" issue.
+        const finalImage = cleanedImageBase64 ? `data:image/png;base64,${cleanedImageBase64}` : base64Image;
+
+        if (!cleanedImageBase64) {
+            console.warn("Background text removal failed or returned empty. Reverting to original image.");
+        }
+
         return {
             backgroundColor: backgroundColor,
             elements: confirmedElements,
-            cleanedImage: cleanedImageBase64 ? `data:image/png;base64,${cleanedImageBase64}` : null,
-            rawResponse: "User Confirmed Layout"
+            cleanedImage: finalImage,
+            rawResponse: cleanedImageBase64 ? "Success" : "Background Gen Failed (Fallback to Original)"
         };
     } catch (e) {
         console.error("Final Processing Failed:", e);
+        // Fallback on error to ensure user still sees the slide, albeit with original text
         return {
             backgroundColor: backgroundColor,
             elements: confirmedElements,
-            cleanedImage: null,
-            rawResponse: "Background Gen Failed"
+            cleanedImage: base64Image, 
+            rawResponse: "Background Gen Error (Fallback to Original)"
         };
     }
 };
